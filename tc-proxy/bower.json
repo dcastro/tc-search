@@ -11,7 +11,10 @@
     "purescript-console": "^2.0.0",
     "purescript-express": "^0.4.2",
     "purescript-node-process": "^3.0.0",
-    "purescript-affjax": "^3.0.2"
+    "purescript-affjax": "^3.0.2",
+    "purescript-logging": "^1.0.0",
+    "purescript-now": "^2.0.0",
+    "purescript-formatters": "^0.1.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"

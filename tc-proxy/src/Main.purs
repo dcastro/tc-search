@@ -1,22 +1,26 @@
 module Main where
 
-import Control.Monad.Aff.Console as AC
+
+import Loggers (consoleLogger, fileLogger)
 import Network.HTTP.Affjax as AX
+import Control.Logger (log)
 import Control.Monad.Aff (Aff, later', runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
+import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION, Error, message)
+import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Ref (REF, Ref, newRef, readRef, writeRef)
 import Data.Int (fromString)
 import Data.Maybe (fromMaybe)
 import Data.MediaType.Common (applicationJSON)
+import Data.String (length)
 import Network.HTTP.Affjax (AJAX)
 import Network.HTTP.RequestHeader (RequestHeader(..))
 import Node.Encoding (Encoding(..))
 import Node.Express.App (App, listenHttp, useOnError, get, use, setProp)
 import Node.Express.Handler (Handler, next)
-import Node.Express.Request (getOriginalUrl, setUserData)
+import Node.Express.Request (getOriginalUrl, getRemoteIp)
 import Node.Express.Response (send, sendJson, setResponseHeader, setStatus)
 import Node.Express.Types (EXPRESS)
 import Node.FS (FS)
@@ -57,11 +61,16 @@ parseInt :: String -> Int
 parseInt str = fromMaybe 0 $ fromString str
 
 -- Monadic handlers
-logger :: forall e. Handler (console :: CONSOLE, ref :: REF | e)
+
+requestsLogger    = fileLogger "requests.log" <> consoleLogger
+updateCacheLogger = fileLogger "updates.log"  <> consoleLogger
+allLoggers        = fileLogger "updates.log" <> fileLogger "requests.log" <> consoleLogger
+
+logger :: forall e. Handler (console :: CONSOLE, ref :: REF, fs :: FS, err :: EXCEPTION, now :: NOW | e)
 logger = do
   url   <- getOriginalUrl
-  liftEff $ log (">>> " <> url)
-  setUserData "logged" url
+  host  <- getRemoteIp
+  log requestsLogger $ url <> " " <> host
   next
 
 errorHandler :: forall e. Error -> Handler e
@@ -69,9 +78,9 @@ errorHandler err = do
   setStatus 400
   sendJson {error: message err}
 
-appSetup :: forall e. AppState -> App (ref :: REF, console :: CONSOLE , ajax :: AJAX, err :: EXCEPTION, fs :: FS | e)
+appSetup :: forall e. AppState -> App (ref :: REF, console :: CONSOLE , ajax :: AJAX, err :: EXCEPTION, fs :: FS, now :: NOW | e)
 appSetup state = do
-  liftEff $ log "Setting up"
+  log requestsLogger "Setting up"
   setProp "json spaces" 4.0
   use               logger
   get "/buildTypes" (getBuildTypesHandler state)
@@ -81,18 +90,18 @@ appSetup state = do
 main :: forall e. Eff (ref :: REF, express :: EXPRESS,
                        console :: CONSOLE, process :: PROCESS,
                        ajax :: AJAX, err :: EXCEPTION,
-                       fs :: FS | e)
+                       fs :: FS, now :: NOW | e)
                       Server
 main = do
   port <- liftEff $ (parseInt <<< fromMaybe "8080") <$> lookupEnv "PORT"
   state <- initState
-  runAff logShow logShow $ setInterval 2000 $ do
-    AC.log "Updating build types"
+  runAff (log allLoggers) (log allLoggers) $ setInterval 2000 $ do
+    log updateCacheLogger "Updating build types"
     str <- getBuildTypes
     liftEff $ writeRef state str
-    AC.log "Updated build types"
+    log updateCacheLogger $ "Updated build types, body length: " <> show (length str)
   liftEff (listenHttp (appSetup state) port \_ ->
-    log $ "Listening on " <> show port)
+    log requestsLogger $ "Listening on " <> show port)
 
 setInterval :: forall e a. Int -> Aff e a -> Aff e Unit
 setInterval ms a = later' ms $ do
