@@ -2,10 +2,9 @@ module Component.BuildTypes where
 
 import Prelude
 import Halogen as H
-import Halogen.HTML as HH
-import Halogen.HTML.Events as HE
-import Halogen.HTML.Events.Forms as HF
-import Halogen.HTML.Properties as HP
+import Halogen.HTML.Indexed as HH
+import Halogen.HTML.Events.Indexed as HE
+import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
 import Control.Monad.Aff (Aff)
@@ -13,7 +12,7 @@ import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Argonaut (decodeJson)
-import Data.Array (all, filter, singleton, sortBy)
+import Data.Array (all, filter, length, singleton, sortBy)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
@@ -48,7 +47,7 @@ render s =
   HH.div_
     [ HH.p_
         [ HH.input
-          [HP.value s.searchText, HF.onValueInput (HE.input UpdateText), HP.autofocus true]
+          [HP.value s.searchText, HE.onValueInput (HE.input UpdateText), HP.autofocus true]
         ]
     , case s.result of
         Nothing         -> HH.text "loading"
@@ -58,7 +57,10 @@ render s =
 
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
 renderBuildTypes xs =
-  HH.ul_ (HH.li_ <<< singleton <<< renderBuildType <$> xs)
+  HH.div_
+    [ HH.p_ [HH.text $ "Found " <> show (length xs) <> " results."]
+    , HH.ul_ (HH.li_ <<< singleton <<< renderBuildType <$> xs)
+    ]
 
 renderBuildType :: BuildType -> H.ComponentHTML Query
 renderBuildType (BuildType x) =
