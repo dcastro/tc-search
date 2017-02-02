@@ -9,6 +9,7 @@ import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
 import Control.Monad.Aff (Aff, attempt)
+import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import DOM (DOM)
 import DOM.HTML (window)
@@ -38,7 +39,7 @@ type Effects eff = (ajax :: AX.AJAX, console :: CONSOLE, dom :: DOM | eff)
 data Query a
   = Initialize a
   | UpdateText String a
-  | GenBookmark a
+  | GenLink a
   | NoAction a
 
 initialState :: State
@@ -125,8 +126,9 @@ renderBuildTypes xs =
             [ HP.class_ $ className "col s6 right-align" ]
             [ HH.p_
                 [ HH.a
-                    [ HP.class_ $ className "btn-floating waves-effect waves-light teal"
-                    , HE.onClick $ HE.input_ GenBookmark
+                    [ HP.class_ $ className "btn-floating waves-effect waves-light teal tooltipped"
+                    , HP.id_ "gen-link"
+                    , HE.onClick $ HE.input_ GenLink
                     ]
                     [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "link" ] ]
                 ]
@@ -156,13 +158,16 @@ eval (Initialize next) = do
         <#> un BuildTypes
         >>> sortBuildTypes
   H.modify (_ { result = Just result })
+  H.fromEff initTooltip
   pure next'
 eval (UpdateText s next)  = H.modify (_ { searchText = s }) *> pure next
-eval (GenBookmark next)   = do
+eval (NoAction next)      = pure next
+eval (GenLink next)       = do
   s <- H.gets _.searchText
   H.fromEff $ window >>= location >>= setHash s
   pure next
-eval (NoAction next)      = pure next
+
+foreign import initTooltip :: forall eff. Eff (dom :: DOM | eff) Unit
 
 sortBuildTypes :: Array BuildType -> Array BuildType
 sortBuildTypes = sortBy (comparing getProject <> comparing getName)
