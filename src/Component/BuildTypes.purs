@@ -4,20 +4,19 @@ import Prelude
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Halogen.HTML.Properties as HP
 import Halogen.HTML.Events.Forms as HF
+import Halogen.HTML.Properties as HP
 import Network.HTTP.Affjax as AX
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Argonaut (decodeJson)
-import Data.Array (singleton)
+import Data.Array (singleton, sortBy)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
-import Model (BuildType(..), BuildTypes(..))
-
+import Model (BuildType(..), BuildTypes(..), getName, getProject)
 
 type State =
   { searchText :: String
@@ -71,7 +70,10 @@ eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
   H.liftH $ liftEff $ log "initializing"
   response <- H.liftH $ liftAff $ AX.get "http://localhost:8080/buildTypes"
-  let result = un BuildTypes <$> decodeJson response.response
+  let result = sortBuildTypes <<< un BuildTypes <$> decodeJson response.response
   H.modify (_ { result = Just result })
   pure next
 eval (UpdateText s next) = H.modify (_ { searchText = s }) *> pure next
+
+sortBuildTypes :: Array BuildType -> Array BuildType
+sortBuildTypes = sortBy (comparing getProject <> comparing getName)

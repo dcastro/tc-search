@@ -1,8 +1,8 @@
 module Model where
 
 import Prelude
-import Data.Newtype (class Newtype)
 import Data.Argonaut (class DecodeJson, decodeJson, (.?))
+import Data.Newtype (class Newtype, un, unwrap)
 import Network.HTTP.Affjax (URL)
 
 newtype BuildType = BuildType
@@ -11,7 +11,13 @@ newtype BuildType = BuildType
   , project :: String
   }
 
+getUrl      = (unwrap >>> _.url)
+getName     = (unwrap >>> _.name)
+getProject  = (unwrap >>> _.project)
+
 newtype BuildTypes = BuildTypes (Array BuildType)
+
+derive instance newtypeBuildType :: Newtype BuildType _
 derive instance newtypeBuildTypes :: Newtype BuildTypes _
 
 instance decodeBuildType :: DecodeJson BuildType where
