@@ -1,0 +1,31 @@
+{
+    "buildType": [
+        {
+            "href": "/guestAuth/app/rest/buildTypes/id:NaviNetQa_Functional_OpenUpgradeRegression_OpenCsiIntegrationValidation",
+            "id": "NaviNetQa_Functional_OpenUpgradeRegression_OpenCsiIntegrationValidation",
+            "name": "OPEN_CSI_EnB_Referrals_Integration_Validation",
+            "projectId": "NaviNetQa_Functional_OpenUpgradeRegression",
+            "projectName": "Test :: Open INT Tests :: _OPEN_Upgrade_Regression",
+            "webUrl": "http://scifbuild01:81/viewType.html?buildTypeId=NaviNetQa_Functional_OpenUpgradeRegression_OpenCsiIntegrationValidation"
+        },
+        {
+            "description": "Test Configuration for CSI tests on OpenInt",
+            "href": "/guestAuth/app/rest/buildTypes/id:NaviNetQa_Functional_OpenUpgradeRegression_OpenIntCsi",
+            "id": "NaviNetQa_Functional_OpenUpgradeRegression_OpenIntCsi",
+            "name": "OpenInt_CSI",
+            "projectId": "NaviNetQa_Functional_OpenUpgradeRegression",
+            "projectName": "Test :: Open INT Tests :: _OPEN_Upgrade_Regression",
+            "webUrl": "http://scifbuild01:81/viewType.html?buildTypeId=NaviNetQa_Functional_OpenUpgradeRegression_OpenIntCsi"
+        },
+        {
+            "description": "Test Configuration for EB tests on OpenInt",
+            "href": "/guestAuth/app/rest/buildTypes/id:NaviNetQa_Functional_OpenUpgradeRegression_OpenIntEb",
+            "id": "NaviNetQa_Functional_OpenUpgradeRegression_OpenIntEb",
+            "name": "OpenInt_EB",
+            "projectId": "NaviNetQa_Functional_OpenUpgradeRegression",
+            "projectName": "Test :: Open INT Tests :: _OPEN_Upgrade_Regression",
+            "webUrl": "http://scifbuild01:81/viewType.html?buildTypeId=NaviNetQa_Functional_OpenUpgradeRegression_OpenIntEb"
+        }
+    ],
+    "count": 3
+}
