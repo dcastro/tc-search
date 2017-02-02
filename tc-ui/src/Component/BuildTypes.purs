@@ -2,6 +2,10 @@ module Component.BuildTypes where
 
 import Prelude
 import Data.URI as U
+import Halogen as H
+import Halogen.HTML.Events.Indexed as HE
+import Halogen.HTML.Indexed as HH
+import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
 import Control.Error.Util (hush)
@@ -9,7 +13,7 @@ import Control.Monad.Aff (Aff, attempt)
 import Control.Monad.Eff.Console (CONSOLE)
 import DOM (DOM)
 import DOM.HTML (window)
-import DOM.HTML.Location (search)
+import DOM.HTML.Location (search, setHash)
 import DOM.HTML.Window (location)
 import Data.Argonaut (decodeJson)
 import Data.Array (all, filter, find, length, sortBy)
@@ -22,13 +26,9 @@ import Data.String.Utils (includes, words)
 import Data.Tuple (fst, snd)
 import Data.URI.Query (parseQuery)
 import Global (decodeURIComponent)
-import Halogen as H
 import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events.Handler (preventDefault)
-import Halogen.HTML.Events.Indexed as HE
-import Halogen.HTML.Indexed as HH
-import Halogen.HTML.Properties.Indexed as HP
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
 import Text.Parsing.StringParser (runParser)
 import Text.Parsing.StringParser.Combinators (optional)
@@ -46,6 +46,7 @@ type Effects eff = (ajax :: AX.AJAX, console :: CONSOLE, dom :: DOM | eff)
 data Query a
   = Initialize a
   | UpdateText String a
+  | GenBookmark a
   | NoAction a
 
 initialState :: State
@@ -132,7 +133,9 @@ renderBuildTypes xs =
             [ HP.class_ $ className "col s6 right-align" ]
             [ HH.p_
                 [ HH.a
-                    [ HP.class_ $ className "btn-floating waves-effect waves-light teal" ]
+                    [ HP.class_ $ className "btn-floating waves-effect waves-light teal"
+                    , HE.onClick $ HE.input_ GenBookmark
+                    ]
                     [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "bookmark" ] ]
                 ]
             ]
@@ -163,6 +166,10 @@ eval (Initialize next) = do
   H.modify (_ { result = Just result })
   pure next'
 eval (UpdateText s next)  = H.modify (_ { searchText = s }) *> pure next
+eval (GenBookmark next)   = do
+  s <- H.gets _.searchText
+  H.fromEff $ window >>= location >>= setHash s
+  pure next
 eval (NoAction next)      = pure next
 
 sortBuildTypes :: Array BuildType -> Array BuildType
