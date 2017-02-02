@@ -66,7 +66,7 @@ render s =
         [ HP.class_ $ className "navbar-fixed"]
         [ HH.nav_
             [ HH.div
-                [ HP.class_ $ className "nav-wrapper" ]
+                [ HP.class_ $ className "nav-wrapper indigo" ]
                 [ HH.form
                     [ HE.onSubmit $ (\e -> preventDefault *> HE.input_ NoAction e) ]
                     [ HH.div
