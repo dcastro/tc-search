@@ -2,8 +2,7 @@ module Model where
 
 import Prelude
 import Data.Argonaut (class DecodeJson, decodeJson, (.?))
-import Data.Function.Memoize (class Tabulate, tabulate)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, un, unwrap)
 import Network.HTTP.Affjax (URL)
 
 newtype BuildType = BuildType
@@ -34,10 +33,3 @@ instance decodeBuildTypes :: DecodeJson BuildTypes where
     obj <- decodeJson json
     xs <- obj .? "buildType"
     pure $ BuildTypes xs
-
-instance tabulateBuildType :: Tabulate BuildType where
-  tabulate f = let f' = tabulate \url -> tabulate \name -> tabulate \project -> f (BuildType {url, name, project})
-               in \(BuildType { url, name, project }) ->
-                  do  g <- f' url
-                      h <- g name
-                      h project
