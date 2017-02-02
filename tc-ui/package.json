@@ -5,7 +5,8 @@
     "watch": "pulp --watch browserify --to dist/app.js"
   },
   "dependencies": {
-    "virtual-dom": "^2.1.1"
+    "virtual-dom": "^2.1.1",
+    "xhr2": "^0.1.4"
   },
   "devDependencies": {
     "pulp": "^10.0.0",

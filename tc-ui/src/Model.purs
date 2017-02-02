@@ -2,7 +2,7 @@ module Model where
 
 import Prelude
 import Data.Argonaut (class DecodeJson, decodeJson, (.?))
-import Data.Newtype (class Newtype, un, unwrap)
+import Data.Newtype (class Newtype, unwrap)
 import Network.HTTP.Affjax (URL)
 
 newtype BuildType = BuildType

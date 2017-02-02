@@ -2,17 +2,16 @@ module Component.BuildTypes where
 
 import Prelude
 import Halogen as H
-import Halogen.HTML.Indexed as HH
 import Halogen.HTML.Events.Indexed as HE
+import Halogen.HTML.Indexed as HH
 import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
-import Control.Monad.Aff (Aff)
-import Control.Monad.Aff.Class (liftAff)
-import Control.Monad.Eff.Class (liftEff)
+import Control.Monad.Aff (Aff, attempt)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Argonaut (decodeJson)
 import Data.Array (all, filter, length, singleton, sortBy)
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
@@ -72,10 +71,12 @@ renderBuildType (BuildType x) =
 
 eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
-  H.liftH $ liftEff $ log "initializing"
-  response <- H.liftH $ liftAff $ AX.get "http://localhost:8080/buildTypes"
+  H.fromEff $ log "initializing"
+  response <- H.fromAff $ attempt $ AX.get "http://localhost:8080/buildTypes"
   let result =
-        decodeJson response.response
+        response
+        # bimap show _.response
+        >>= decodeJson
         <#> un BuildTypes
         >>> sortBuildTypes
   H.modify (_ { result = Just result })
