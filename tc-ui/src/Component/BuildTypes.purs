@@ -2,10 +2,6 @@ module Component.BuildTypes where
 
 import Prelude
 import Data.URI as U
-import Halogen as H
-import Halogen.HTML.Events.Indexed as HE
-import Halogen.HTML.Indexed as HH
-import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
 import Control.Error.Util (hush)
@@ -26,8 +22,13 @@ import Data.String.Utils (includes, words)
 import Data.Tuple (fst, snd)
 import Data.URI.Query (parseQuery)
 import Global (decodeURIComponent)
+import Halogen as H
 import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
+import Halogen.HTML.Events.Handler (preventDefault)
+import Halogen.HTML.Events.Indexed as HE
+import Halogen.HTML.Indexed as HH
+import Halogen.HTML.Properties.Indexed as HP
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
 import Text.Parsing.StringParser (runParser)
 import Text.Parsing.StringParser.Combinators (optional)
@@ -42,7 +43,10 @@ type Result = Either String (Array BuildType)
 
 type Effects eff = (ajax :: AX.AJAX, console :: CONSOLE, dom :: DOM | eff)
 
-data Query a = Initialize a | UpdateText String a
+data Query a
+  = Initialize a
+  | UpdateText String a
+  | NoAction a
 
 initialState :: State
 initialState = { searchText: "", result: Nothing }
@@ -61,7 +65,8 @@ render s =
     [ HH.nav_
         [ HH.div
             [ HP.class_ $ className "nav-wrapper" ]
-            [ HH.form_
+            [ HH.form
+                [ HE.onSubmit $ (\e -> preventDefault *> HE.input_ NoAction e) ]
                 [ HH.div
                     [ HP.class_ $ className "input-field" ]
                     [ HH.input
@@ -132,7 +137,8 @@ eval (Initialize next) = do
         >>> sortBuildTypes
   H.modify (_ { result = Just result })
   pure next'
-eval (UpdateText s next) = H.modify (_ { searchText = s }) *> pure next
+eval (UpdateText s next)  = H.modify (_ { searchText = s }) *> pure next
+eval (NoAction next)      = pure next
 
 sortBuildTypes :: Array BuildType -> Array BuildType
 sortBuildTypes = sortBy (comparing getProject <> comparing getName)
