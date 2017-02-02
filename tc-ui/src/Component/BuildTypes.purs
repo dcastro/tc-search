@@ -128,7 +128,7 @@ renderBuildTypes xs =
                     [ HP.class_ $ className "btn-floating waves-effect waves-light teal"
                     , HE.onClick $ HE.input_ GenBookmark
                     ]
-                    [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "bookmark" ] ]
+                    [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "link" ] ]
                 ]
             ]
         ]
