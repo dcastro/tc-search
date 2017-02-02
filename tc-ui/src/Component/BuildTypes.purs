@@ -62,31 +62,34 @@ ui = H.lifecycleComponent
 render :: State -> H.ComponentHTML Query
 render s =
   HH.div_
-    [ HH.nav_
-        [ HH.div
-            [ HP.class_ $ className "nav-wrapper" ]
-            [ HH.form
-                [ HE.onSubmit $ (\e -> preventDefault *> HE.input_ NoAction e) ]
-                [ HH.div
-                    [ HP.class_ $ className "input-field" ]
-                    [ HH.input
-                        [ HP.id_ "search"
-                        , HP.inputType HP.InputSearch
-                        , HP.autofocus true
-                        , HP.value s.searchText
-                        , HE.onValueInput (HE.input UpdateText)
-                        ]
-                    , HH.label
-                        [ HP.class_ $ className "label-icon"
-                        , HP.for "search"
-                        ]
-                        [ HH.i
+    [ HH.div
+        [ HP.class_ $ className "navbar-fixed"]
+        [ HH.nav_
+            [ HH.div
+                [ HP.class_ $ className "nav-wrapper" ]
+                [ HH.form
+                    [ HE.onSubmit $ (\e -> preventDefault *> HE.input_ NoAction e) ]
+                    [ HH.div
+                        [ HP.class_ $ className "input-field" ]
+                        [ HH.input
+                            [ HP.id_ "search-text"
+                            , HP.inputType HP.InputSearch
+                            , HP.autofocus true
+                            , HP.value s.searchText
+                            , HE.onValueInput (HE.input UpdateText)
+                            ]
+                        , HH.label
+                            [ HP.class_ $ className "label-icon"
+                            , HP.for "search-text"
+                            ]
+                            [ HH.i
+                                [ HP.class_ $ className "material-icons" ]
+                                [ HH.text "search" ]
+                            ]
+                        , HH.i
                             [ HP.class_ $ className "material-icons" ]
-                            [ HH.text "search" ]
+                            [ HH.text "close" ]
                         ]
-                    , HH.i
-                        [ HP.class_ $ className "material-icons" ]
-                        [ HH.text "close" ]
                     ]
                 ]
             ]
