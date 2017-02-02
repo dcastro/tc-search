@@ -16,7 +16,7 @@ import DOM.HTML (window)
 import DOM.HTML.Location (search)
 import DOM.HTML.Window (location)
 import Data.Argonaut (decodeJson)
-import Data.Array (all, filter, find, length, singleton, sortBy)
+import Data.Array (all, filter, find, length, sortBy)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
@@ -57,41 +57,57 @@ ui = H.lifecycleComponent
 render :: State -> H.ComponentHTML Query
 render s =
   HH.div_
-    [ HH.div
-        [ HP.classes $ className <$> ["mdl-textfield", "mdl-js-textfield", "mdl-textfield--floating-label"] ]
-        [ HH.input
-            [ HP.class_ (className "mdl-textfield__input")
-            , HP.id_ "search-text"
-            , HP.autofocus true
-            , HP.value s.searchText
-            , HE.onValueInput (HE.input UpdateText)
+    [ HH.nav_
+        [ HH.div
+            [ HP.class_ $ className "nav-wrapper" ]
+            [ HH.form_
+                [ HH.div
+                    [ HP.class_ $ className "input-field" ]
+                    [ HH.input
+                        [ HP.id_ "search"
+                        , HP.inputType HP.InputSearch
+                        , HP.autofocus true
+                        , HP.value s.searchText
+                        , HE.onValueInput (HE.input UpdateText)
+                        ]
+                    , HH.label
+                        [ HP.class_ $ className "label-icon"
+                        , HP.for "search"
+                        ]
+                        [ HH.i
+                            [ HP.class_ $ className "material-icons" ]
+                            [ HH.text "search" ]
+                        ]
+                    , HH.i
+                        [ HP.class_ $ className "material-icons" ]
+                        [ HH.text "close" ]
+                    ]
+                ]
             ]
-        , HH.label
-            [HP.class_ (className "mdl-textfield__label")
-            , HP.for "search-text"
-            ]
-            [HH.text "Search"]
         ]
-    , case s.result of
-        Nothing         -> HH.text "loading"
-        Just (Left err) -> HH.text $ "Failed to load build types: " <> err
-        Just (Right xs) -> renderBuildTypes $ filter (isMatch s.searchText) xs
+    , HH.main
+        [ HP.class_ $ className "container" ]
+        [ case s.result of
+            Nothing         -> HH.text "Loading..."
+            Just (Left err) -> HH.text $ "Failed to load build types: " <> err
+            Just (Right xs) -> renderBuildTypes $ filter (isMatch s.searchText) xs
+        ]
     ]
 
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
 renderBuildTypes xs =
   HH.div_
-    [ HH.p_ [HH.text $ "Found " <> show (length xs) <> " results."]
-    , HH.ul_ (HH.li_ <<< singleton <<< renderBuildType <$> xs)
+    [ HH.p_ [HH.text $ "Found " <> show (length xs) <> " matches." ]
+    , HH.div
+        [ HP.class_ $ className "collection" ]
+        (renderBuildType <$> xs)
     ]
 
 renderBuildType :: BuildType -> H.ComponentHTML Query
 renderBuildType (BuildType x) =
-  HH.p_
-    [ HH.text x.project
-    , HH.text " > "
-    , HH.a [HP.href x.url, HP.target "_blank"] [HH.text x.name]
-    ]
+  HH.a
+    [ HP.href x.url, HP.target "_blank", HP.class_ $ className "collection-item" ]
+    [ HH.text $ x.project <> " > " <> x.name ]
 
 eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
