@@ -98,7 +98,7 @@ render s =
         [ HP.class_ $ className "container" ]
         [ case s.result of
             Nothing         -> loading
-            Just (Left err) -> HH.text $ "Failed to load build types: " <> err
+            Just (Left err) -> showError err
             Just (Right xs) -> renderBuildTypes $ filter (isMatch s.searchText) xs
         ]
     ]
@@ -110,6 +110,15 @@ loading = HH.div
                 [ HP.class_ $ className "indeterminate" ]
                 [ ]
             ]
+
+showError :: forall p i. String ->  HTML p i
+showError err =
+  HH.div
+    [ HP.classes $ className <$> [ "card-panel", "red" ] ]
+    [ HH.span
+        [ HP.class_ $ className "white-text" ]
+        [ HH.text err ]
+    ]
 
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
 renderBuildTypes xs =
