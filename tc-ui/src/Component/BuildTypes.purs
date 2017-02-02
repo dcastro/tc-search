@@ -116,7 +116,7 @@ renderBuildTypes xs =
   HH.div_
     [ HH.p_ [HH.text $ "Found " <> show (length xs) <> " matches." ]
     , HH.div
-        [ HP.class_ $ className "collection" ]
+        [ HP.classes $ className <$> ["collection", "z-depth-3"] ]
         (renderBuildType <$> xs)
     ]
 
