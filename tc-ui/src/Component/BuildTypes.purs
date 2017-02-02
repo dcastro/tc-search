@@ -40,7 +40,6 @@ data Query a
   = Initialize a
   | UpdateText String a
   | GenLink a
-  | NoAction a
 
 initialState :: State
 initialState = { searchText: "", result: Nothing }
@@ -62,7 +61,7 @@ render s =
             [ HH.div
                 [ HP.class_ $ className "nav-wrapper indigo" ]
                 [ HH.form
-                    [ HE.onSubmit $ (\e -> preventDefault *> HE.input_ NoAction e) ]
+                    [ HE.onSubmit $ (\_ -> preventDefault $> Nothing) ]
                     [ HH.div
                         [ HP.class_ $ className "input-field" ]
                         [ HH.input
@@ -161,7 +160,6 @@ eval (Initialize next) = do
   H.fromEff initTooltip
   pure next'
 eval (UpdateText s next)  = H.modify (_ { searchText = s }) *> pure next
-eval (NoAction next)      = pure next
 eval (GenLink next)       = do
   s <- H.gets _.searchText
   H.fromEff $ window >>= location >>= setHash s
