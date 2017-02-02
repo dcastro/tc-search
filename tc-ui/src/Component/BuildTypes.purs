@@ -26,6 +26,7 @@ import Data.String.Utils (includes, words)
 import Data.Tuple (fst, snd)
 import Data.URI.Query (parseQuery)
 import Global (decodeURIComponent)
+import Halogen.HTML (className)
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
 import Text.Parsing.StringParser (runParser)
 import Text.Parsing.StringParser.Combinators (optional)
@@ -56,9 +57,20 @@ ui = H.lifecycleComponent
 render :: State -> H.ComponentHTML Query
 render s =
   HH.div_
-    [ HH.p_
+    [ HH.div
+        [ HP.classes $ className <$> ["mdl-textfield", "mdl-js-textfield", "mdl-textfield--floating-label"] ]
         [ HH.input
-          [HP.value s.searchText, HE.onValueInput (HE.input UpdateText), HP.autofocus true]
+            [ HP.class_ (className "mdl-textfield__input")
+            , HP.id_ "search-text"
+            , HP.autofocus true
+            , HP.value s.searchText
+            , HE.onValueInput (HE.input UpdateText)
+            ]
+        , HH.label
+            [HP.class_ (className "mdl-textfield__label")
+            , HP.for "search-text"
+            ]
+            [HH.text "Search"]
         ]
     , case s.result of
         Nothing         -> HH.text "loading"
