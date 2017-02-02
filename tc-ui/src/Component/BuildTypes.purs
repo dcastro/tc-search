@@ -1,38 +1,30 @@
 module Component.BuildTypes where
 
 import Prelude
-import Data.URI as U
+import Data.String as S
 import Halogen as H
 import Halogen.HTML.Events.Indexed as HE
 import Halogen.HTML.Indexed as HH
 import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
-import Control.Error.Util (hush)
 import Control.Monad.Aff (Aff, attempt)
 import Control.Monad.Eff.Console (CONSOLE)
 import DOM (DOM)
 import DOM.HTML (window)
-import DOM.HTML.Location (search, setHash)
+import DOM.HTML.Location (hash, setHash)
 import DOM.HTML.Window (location)
 import Data.Argonaut (decodeJson)
-import Data.Array (all, filter, find, length, sortBy)
+import Data.Array (all, filter, length, sortBy)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(Just, Nothing))
 import Data.Newtype (un)
-import Data.String (toLower)
 import Data.String.Utils (includes, words)
-import Data.Tuple (fst, snd)
-import Data.URI.Query (parseQuery)
-import Global (decodeURIComponent)
 import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events.Handler (preventDefault)
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
-import Text.Parsing.StringParser (runParser)
-import Text.Parsing.StringParser.Combinators (optional)
-import Text.Parsing.StringParser.String (char)
 
 type State =
   { searchText :: String
@@ -153,8 +145,8 @@ renderBuildType (BuildType x) =
 
 eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
-  queryStr <- H.fromEff $ window >>= location >>= search
-  next' <- maybe (pure next) (\q -> eval (UpdateText q next)) (getQuery queryStr)
+  searchText  <- H.fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#')
+  next'       <- eval (UpdateText searchText next)
 
   response <- H.fromAff $ attempt $ AX.get "http://localhost:8080/buildTypes"
   let result =
@@ -176,14 +168,7 @@ sortBuildTypes :: Array BuildType -> Array BuildType
 sortBuildTypes = sortBy (comparing getProject <> comparing getName)
 
 fullText :: BuildType -> String
-fullText = lift2 (<>) getProject getName >>> toLower
+fullText = lift2 (<>) getProject getName >>> S.toLower
 
 isMatch :: String -> BuildType -> Boolean
-isMatch str xs = all (_ `includes` fullText xs) $ words $ toLower str
-
-getQuery :: String -> Maybe String
-getQuery queryStr = do
-  U.Query (pairs) <- hush $ runParser (optional (char '?') *> parseQuery) queryStr
-  pair <- find (fst >>> (_ == "q")) pairs
-  value <- snd pair
-  pure $ decodeURIComponent value
+isMatch str xs = all (_ `includes` fullText xs) $ words $ S.toLower str
