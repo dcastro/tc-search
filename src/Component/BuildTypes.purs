@@ -3,7 +3,9 @@ module Component.BuildTypes where
 import Prelude
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
+import Halogen.HTML.Events.Forms as HF
 import Network.HTTP.Affjax as AX
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.Class (liftAff)
@@ -26,7 +28,7 @@ type Result = Either String (Array BuildType)
 
 type Effects eff = (ajax :: AX.AJAX, console :: CONSOLE | eff)
 
-data Query a = Initialize a
+data Query a = Initialize a | UpdateText String a
 
 initialState :: State
 initialState = { searchText: "", result: Nothing }
@@ -43,11 +45,14 @@ render :: State -> H.ComponentHTML Query
 render s =
   HH.div_
     [
-      HH.p_ [HH.text "hello"]
-      , case s.result of
-          Nothing         -> HH.text "loading"
-          Just (Left err) -> HH.text $ "Failed to load build types: " <> err
-          Just (Right xs) -> renderBuildTypes xs
+      HH.p_
+        [
+          HH.input [HP.value s.searchText, HF.onValueInput (HE.input UpdateText)]
+        ]
+    , case s.result of
+        Nothing         -> HH.text "loading"
+        Just (Left err) -> HH.text $ "Failed to load build types: " <> err
+        Just (Right xs) -> renderBuildTypes xs
     ]
 
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
@@ -69,3 +74,4 @@ eval (Initialize next) = do
   let result = un BuildTypes <$> decodeJson response.response
   H.modify (_ { result = Just result })
   pure next
+eval (UpdateText s next) = H.modify (_ { searchText = s }) *> pure next
