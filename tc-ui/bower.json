@@ -15,7 +15,12 @@
     "purescript-unsafe-coerce": "^2.0.0",
     "purescript-argonaut": "^2.0.0",
     "purescript-newtype": "^1.2.0",
-    "purescript-stringutils": "^0.0.4"
+    "purescript-stringutils": "^0.0.4",
+    "purescript-dom": "^3.3.1",
+    "purescript-uri": "^2.0.0",
+    "purescript-string-parsers": "^2.0.0",
+    "purescript-errors": "^2.2.0",
+    "purescript-globals": "^2.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"
