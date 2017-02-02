@@ -121,7 +121,7 @@ renderBuildTypes xs =
         [ HP.class_ $ className "row valign-wrapper" ]
         [ HH.div
             [ HP.class_ $ className "col s6" ]
-            [ HH.p_ [ HH.text $ "Found " <> show (length xs) <> " matches." ] ]
+            [ renderResultCount xs ]
         , HH.div
             [ HP.class_ $ className "col s6 right-align" ]
             [ HH.p_
@@ -138,6 +138,12 @@ renderBuildTypes xs =
         [ HP.classes $ className <$> ["collection", "z-depth-3"] ]
         (renderBuildType <$> xs)
     ]
+
+renderResultCount :: forall q. Array BuildType -> H.ComponentHTML q
+renderResultCount xs =
+  let count   = length xs
+      matches = if count == 1 then "match" else "matches"
+  in  HH.p_ [ HH.text $ "Found " <> show count <> " " <> matches ]
 
 renderBuildType :: BuildType -> H.ComponentHTML Query
 renderBuildType (BuildType x) =
