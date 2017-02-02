@@ -27,6 +27,7 @@ import Data.Tuple (fst, snd)
 import Data.URI.Query (parseQuery)
 import Global (decodeURIComponent)
 import Halogen.HTML (className)
+import Halogen.HTML.Core (HTML)
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
 import Text.Parsing.StringParser (runParser)
 import Text.Parsing.StringParser.Combinators (optional)
@@ -88,11 +89,19 @@ render s =
     , HH.main
         [ HP.class_ $ className "container" ]
         [ case s.result of
-            Nothing         -> HH.text "Loading..."
+            Nothing         -> loading
             Just (Left err) -> HH.text $ "Failed to load build types: " <> err
             Just (Right xs) -> renderBuildTypes $ filter (isMatch s.searchText) xs
         ]
     ]
+
+loading :: forall p i. HTML p i
+loading = HH.div
+            [ HP.class_ $ className "progress" ]
+            [ HH.div
+                [ HP.class_ $ className "indeterminate" ]
+                [ ]
+            ]
 
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
 renderBuildTypes xs =
