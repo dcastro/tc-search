@@ -22,6 +22,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.Newtype (un)
 import Data.String.Utils (includes, words)
+import Global (decodeURIComponent, encodeURIComponent)
 import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events.Handler (preventDefault)
@@ -153,7 +154,7 @@ renderBuildType (BuildType x) =
 
 eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
-  searchText  <- H.fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#')
+  searchText  <- H.fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#') >>> decodeURIComponent
   next'       <- eval (UpdateText searchText next)
 
   result <- H.fromAff $ getBuildTypes
@@ -163,7 +164,7 @@ eval (Initialize next) = do
 eval (UpdateText s next)  = H.modify (_ { searchText = s }) *> pure next
 eval (GenLink next)       = do
   s <- H.gets _.searchText
-  H.fromEff $ window >>= location >>= setHash s
+  H.fromEff $ window >>= location >>= setHash (encodeURIComponent s)
   pure next
 
 foreign import initTooltip :: forall eff. Eff (dom :: DOM | eff) Unit
