@@ -46,10 +46,9 @@ ui = H.lifecycleComponent
 render :: State -> H.ComponentHTML Query
 render s =
   HH.div_
-    [
-      HH.p_
-        [
-          HH.input [HP.value s.searchText, HF.onValueInput (HE.input UpdateText)]
+    [ HH.p_
+        [ HH.input
+          [HP.value s.searchText, HF.onValueInput (HE.input UpdateText), HP.autofocus true]
         ]
     , case s.result of
         Nothing         -> HH.text "loading"
