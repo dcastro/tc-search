@@ -123,7 +123,20 @@ showError err =
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
 renderBuildTypes xs =
   HH.div_
-    [ HH.p_ [HH.text $ "Found " <> show (length xs) <> " matches." ]
+    [ HH.div
+        [ HP.class_ $ className "row valign-wrapper" ]
+        [ HH.div
+            [ HP.class_ $ className "col s6" ]
+            [ HH.p_ [ HH.text $ "Found " <> show (length xs) <> " matches." ] ]
+        , HH.div
+            [ HP.class_ $ className "col s6 right-align" ]
+            [ HH.p_
+                [ HH.a
+                    [ HP.class_ $ className "btn-floating waves-effect waves-light teal" ]
+                    [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "bookmark" ] ]
+                ]
+            ]
+        ]
     , HH.div
         [ HP.classes $ className <$> ["collection", "z-depth-3"] ]
         (renderBuildType <$> xs)
