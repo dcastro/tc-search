@@ -14,7 +14,8 @@
     "purescript-halogen": "^0.12.0",
     "purescript-unsafe-coerce": "^2.0.0",
     "purescript-argonaut": "^2.0.0",
-    "purescript-newtype": "^1.2.0"
+    "purescript-newtype": "^1.2.0",
+    "purescript-stringutils": "^0.0.4"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"

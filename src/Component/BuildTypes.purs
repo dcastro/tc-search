@@ -7,15 +7,18 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Events.Forms as HF
 import Halogen.HTML.Properties as HP
 import Network.HTTP.Affjax as AX
+import Control.Apply (lift2)
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Argonaut (decodeJson)
-import Data.Array (singleton, sortBy)
+import Data.Array (all, filter, singleton, sortBy)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
+import Data.String (toLower)
+import Data.String.Utils (includes, words)
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
 
 type State =
@@ -51,7 +54,7 @@ render s =
     , case s.result of
         Nothing         -> HH.text "loading"
         Just (Left err) -> HH.text $ "Failed to load build types: " <> err
-        Just (Right xs) -> renderBuildTypes xs
+        Just (Right xs) -> renderBuildTypes $ filter (isMatch s.searchText) xs
     ]
 
 renderBuildTypes :: Array BuildType -> H.ComponentHTML Query
@@ -70,10 +73,19 @@ eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
   H.liftH $ liftEff $ log "initializing"
   response <- H.liftH $ liftAff $ AX.get "http://localhost:8080/buildTypes"
-  let result = sortBuildTypes <<< un BuildTypes <$> decodeJson response.response
+  let result =
+        decodeJson response.response
+        <#> un BuildTypes
+        >>> sortBuildTypes
   H.modify (_ { result = Just result })
   pure next
 eval (UpdateText s next) = H.modify (_ { searchText = s }) *> pure next
 
 sortBuildTypes :: Array BuildType -> Array BuildType
 sortBuildTypes = sortBy (comparing getProject <> comparing getName)
+
+fullText :: BuildType -> String
+fullText = lift2 (<>) getProject getName >>> toLower
+
+isMatch :: String -> BuildType -> Boolean
+isMatch str xs = all (_ `includes` fullText xs) $ words $ toLower str
