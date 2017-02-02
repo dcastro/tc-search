@@ -1,4 +1,7 @@
 
+Got tired of TeamCity's broken search box, so I made my own in PureScript.
+
+
 tc-ui
 ```
 $ npm i
