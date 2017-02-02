@@ -26,6 +26,7 @@ import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events.Handler (preventDefault)
 import Model (BuildType(..), BuildTypes(..), getName, getProject)
+import Network.HTTP.Affjax (AJAX)
 
 type State =
   { searchText :: String
@@ -149,13 +150,7 @@ eval (Initialize next) = do
   searchText  <- H.fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#')
   next'       <- eval (UpdateText searchText next)
 
-  response <- H.fromAff $ attempt $ AX.get "http://localhost:8080/buildTypes"
-  let result =
-        response
-        # bimap show _.response
-        >>= decodeJson
-        <#> un BuildTypes
-        >>> sortBuildTypes
+  result <- H.fromAff $ getBuildTypes
   H.modify (_ { result = Just result })
   H.fromEff initTooltip
   pure next'
@@ -166,6 +161,17 @@ eval (GenLink next)       = do
   pure next
 
 foreign import initTooltip :: forall eff. Eff (dom :: DOM | eff) Unit
+
+getBuildTypes :: forall e. Aff (ajax :: AJAX | e) (Either String (Array BuildType))
+getBuildTypes = do
+  response <- attempt $ AX.get "http://localhost:8080/buildTypes"
+  let result =
+        response
+        # bimap show _.response
+        >>= decodeJson
+        <#> un BuildTypes
+        >>> sortBuildTypes
+  pure result
 
 sortBuildTypes :: Array BuildType -> Array BuildType
 sortBuildTypes = sortBy (comparing getProject <> comparing getName)
