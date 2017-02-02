@@ -1,9 +1,13 @@
 module Main where
 
 import Prelude
+import Halogen as H
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Halogen.Util (awaitBody, runHalogenAff)
+import Component.BuildTypes (ui, initialState, Effects)
+import Halogen (runUI)
 
-main :: forall e. Eff (console :: CONSOLE | e) Unit
-main = do
-  log "Hello sailor!"
+main :: Eff (H.HalogenEffects (Effects ())) Unit
+main = runHalogenAff do
+  body <- awaitBody
+  runUI ui initialState body
