@@ -2,8 +2,8 @@ module Component.BuildTypes where
 
 import Prelude
 import Halogen as H
-import Halogen.HTML.Indexed as HH
 import Halogen.HTML.Events.Indexed as HE
+import Halogen.HTML.Indexed as HH
 import Halogen.HTML.Properties.Indexed as HP
 import Network.HTTP.Affjax as AX
 import Control.Apply (lift2)
@@ -14,6 +14,7 @@ import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Argonaut (decodeJson)
 import Data.Array (all, filter, length, singleton, sortBy)
 import Data.Either (Either(..))
+import Data.Function.Memoize (memoize)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (un)
 import Data.String (toLower)
@@ -86,7 +87,7 @@ sortBuildTypes :: Array BuildType -> Array BuildType
 sortBuildTypes = sortBy (comparing getProject <> comparing getName)
 
 fullText :: BuildType -> String
-fullText = lift2 (<>) getProject getName >>> toLower
+fullText = memoize $ lift2 (<>) getProject getName >>> toLower
 
 isMatch :: String -> BuildType -> Boolean
 isMatch str xs = all (_ `includes` fullText xs) $ words $ toLower str

@@ -15,7 +15,9 @@
     "purescript-unsafe-coerce": "^2.0.0",
     "purescript-argonaut": "^2.0.0",
     "purescript-newtype": "^1.2.0",
-    "purescript-stringutils": "^0.0.4"
+    "purescript-stringutils": "^0.0.4",
+    "purescript-lazy": "^2.0.0",
+    "purescript-memoize": "^3.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"
