@@ -13,7 +13,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import DOM (DOM)
 import DOM.HTML (window)
-import DOM.HTML.Location (hash, setHash)
+import DOM.HTML.Location (hash, href, setHash)
 import DOM.HTML.Window (location)
 import Data.Argonaut (decodeJson)
 import Data.Array (all, filter, length, sortBy)
@@ -23,6 +23,7 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Data.Newtype (un)
 import Data.String.Utils (includes, words)
 import Global (decodeURIComponent, encodeURIComponent)
+import Halogen (fromEff)
 import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events.Handler (preventDefault)
@@ -32,6 +33,7 @@ import Network.HTTP.Affjax (AJAX)
 type State =
   { searchText :: String
   , result :: Maybe Result
+  , href :: String
   }
 
 type Result = Either String (Array BuildType)
@@ -42,9 +44,10 @@ data Query a
   = Initialize a
   | UpdateText String a
   | GenLink a
+  | CopyLink a
 
-initialState :: State
-initialState = { searchText: "", result: Nothing }
+initialState :: String -> State
+initialState = { searchText: "", result: Nothing , href: _ }
 
 ui :: forall eff. H.Component State Query (Aff (Effects eff))
 ui = H.lifecycleComponent
@@ -96,6 +99,7 @@ render s =
             Just (Left err) -> showError err
             Just (Right xs) -> renderBuildTypes $ filter (isMatch s.searchText) xs
         ]
+    , renderModal s.href
     ]
 
 loading :: forall p i. HTML p i
@@ -130,6 +134,7 @@ renderBuildTypes xs =
                     [ HP.class_ $ className "btn-floating waves-effect waves-light teal tooltipped"
                     , HP.id_ "gen-link"
                     , HE.onClick $ HE.input_ GenLink
+                    , HP.href "#copyModal"
                     ]
                     [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "link" ] ]
                 ]
@@ -152,22 +157,58 @@ renderBuildType (BuildType x) =
     [ HP.href x.url, HP.target "_blank", HP.class_ $ className "collection-item" ]
     [ HH.text $ x.project <> " > " <> x.name ]
 
+renderModal :: String -> H.ComponentHTML Query
+renderModal href =
+  HH.div
+    [ HP.id_ "copyModal", HP.class_ $ className "modal" ]
+    [ HH.div
+        [ HP.class_ $ className "modal-content row" ]
+        [ HH.div
+            [ HP.class_ $ className "col s11" ]
+            [ HH.span
+                [ HP.id_ "copy-text-area" ]
+                [ HH.text href ]
+            ]
+        , HH.div
+            [ HP.class_ $ className "col s1 right-align" ]
+            [ HH.a
+                [ HP.class_ $ className "btn-floating waves-effect waves-light teal"
+                , HP.id_ "copy-link"
+                , HE.onClick $ HE.input_ CopyLink
+                ]
+                [ HH.i [ HP.class_ $ className "material-icons" ] [ HH.text "content_copy" ]
+                ]
+            ]
+        ]
+    ]
+
 eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
   searchText  <- H.fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#') >>> decodeURIComponent
   next'       <- eval (UpdateText searchText next)
 
   result <- H.fromAff $ getBuildTypes
-  H.modify (_ { result = Just result })
-  H.fromEff initTooltip
+  H.modify _ { result = Just result }
+  H.fromEff (initTooltip *> initModals)
   pure next'
-eval (UpdateText s next)  = H.modify (_ { searchText = s }) *> pure next
+eval (UpdateText s next)  = H.modify _ { searchText = s } $> next
 eval (GenLink next)       = do
   s <- H.gets _.searchText
   H.fromEff $ window >>= location >>= setHash (encodeURIComponent s)
+  href <- H.fromEff $ window >>= location >>= href
+  H.modify _ { href = href }
+  pure next
+eval (CopyLink next) = do
+  href    <- H.gets _.href
+  success <- fromEff $ clipboard href
+  fromEff $ showToast $ if success then "Copied URL" else "Unable to copy URL"
   pure next
 
-foreign import initTooltip :: forall eff. Eff (dom :: DOM | eff) Unit
+foreign import initTooltip  :: forall eff. Eff (dom :: DOM | eff) Unit
+foreign import initModals   :: forall eff. Eff (dom :: DOM | eff) Unit
+
+foreign import clipboard    :: forall eff. String -> Eff (dom :: DOM | eff) Boolean
+foreign import showToast    :: forall eff. String -> Eff (dom :: DOM | eff) Unit
 
 getBuildTypes :: forall e. Aff (ajax :: AJAX | e) (Either String (Array BuildType))
 getBuildTypes = do
@@ -187,4 +228,4 @@ fullText :: BuildType -> String
 fullText = lift2 (<>) getProject getName >>> S.toLower
 
 isMatch :: String -> BuildType -> Boolean
-isMatch str xs = all (_ `includes` fullText xs) $ words $ S.toLower str
+isMatch str x = all (_ `includes` fullText x) $ words $ S.toLower str

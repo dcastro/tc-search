@@ -1,0 +1,7 @@
+#copy-text-area {
+  overflow-wrap: break-word;
+}
+
+.modal-content.row {
+  margin-bottom: 0;
+}
