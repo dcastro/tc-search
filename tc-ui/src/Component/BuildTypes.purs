@@ -23,7 +23,7 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Data.Newtype (un)
 import Data.String.Utils (includes, words)
 import Global (decodeURIComponent, encodeURIComponent)
-import Halogen (fromEff)
+import Halogen (fromAff, fromEff, gets, modify)
 import Halogen.HTML (className)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events.Handler (preventDefault)
@@ -184,24 +184,24 @@ renderModal href =
 
 eval :: forall eff. Query ~> H.ComponentDSL State Query (Aff (Effects eff))
 eval (Initialize next) = do
-  searchText  <- H.fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#') >>> decodeURIComponent
+  searchText  <- fromEff $ window >>= location >>= hash <#> S.dropWhile (_ == '#') >>> decodeURIComponent
   next'       <- eval (UpdateText searchText next)
 
-  result <- H.fromAff $ getBuildTypes
-  H.modify _ { result = Just result }
-  H.fromEff (initTooltip *> initModals)
+  result      <- fromAff getBuildTypes
+  _           <- modify _ { result = Just result }
+  _           <- fromEff (initTooltip *> initModals)
   pure next'
-eval (UpdateText s next)  = H.modify _ { searchText = s } $> next
+eval (UpdateText s next)  = modify _ { searchText = s } $> next
 eval (GenLink next)       = do
-  s <- H.gets _.searchText
-  H.fromEff $ window >>= location >>= setHash (encodeURIComponent s)
-  href <- H.fromEff $ window >>= location >>= href
-  H.modify _ { href = href }
+  s       <- gets _.searchText
+  _       <- fromEff $ window >>= location >>= setHash (encodeURIComponent s)
+  href    <- fromEff $ window >>= location >>= href
+  _       <- modify _ { href = href }
   pure next
 eval (CopyLink next) = do
-  href    <- H.gets _.href
+  href    <- gets _.href
   success <- fromEff $ clipboard href
-  fromEff $ showToast $ if success then "Copied URL" else "Unable to copy URL"
+  _       <- fromEff $ showToast $ if success then "Copied URL" else "Unable to copy URL"
   pure next
 
 foreign import initTooltip  :: forall eff. Eff (dom :: DOM | eff) Unit
