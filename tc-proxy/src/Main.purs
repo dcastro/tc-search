@@ -61,16 +61,14 @@ parseInt :: String -> Int
 parseInt str = fromMaybe 0 $ fromString str
 
 -- Monadic handlers
+logger = fileLogger "log.log" <> consoleLogger
+log' = log logger
 
-requestsLogger    = fileLogger "requests.log" <> consoleLogger
-updateCacheLogger = fileLogger "updates.log"  <> consoleLogger
-allLoggers        = fileLogger "updates.log"  <> fileLogger "requests.log" <> consoleLogger
-
-logger :: forall e. Handler (console :: CONSOLE, ref :: REF, fs :: FS, err :: EXCEPTION, now :: NOW | e)
-logger = do
+loggerHandler :: forall e. Handler (console :: CONSOLE, ref :: REF, fs :: FS, err :: EXCEPTION, now :: NOW | e)
+loggerHandler = do
   url   <- getOriginalUrl
   host  <- getRemoteIp
-  log requestsLogger $ url <> " " <> host
+  log' $ url <> " " <> host
   next
 
 errorHandler :: forall e. Error -> Handler e
@@ -80,9 +78,9 @@ errorHandler err = do
 
 appSetup :: forall e. AppState -> App (ref :: REF, console :: CONSOLE , ajax :: AJAX, err :: EXCEPTION, fs :: FS, now :: NOW | e)
 appSetup state = do
-  log requestsLogger "Setting up"
+  log' "Setting up"
   setProp "json spaces" 4.0
-  use               logger
+  use               loggerHandler
   get "/buildTypes" (getBuildTypesHandler state)
   get "/sample"     sample
   useOnError        errorHandler
@@ -95,13 +93,11 @@ main :: forall e. Eff (ref :: REF, express :: EXPRESS,
 main = do
   port <- liftEff $ (parseInt <<< fromMaybe "8080") <$> lookupEnv "PORT"
   state <- initState
-  runAff (log allLoggers) (log allLoggers) $ setInterval 2000 $ catchAndLog $ do
-    log updateCacheLogger "Updating build types"
+  runAff log' log' $ setInterval 2000 $ catchAndLog $ do
     str <- getBuildTypes
     liftEff $ writeRef state str
-    log updateCacheLogger $ "Updated build types, body length: " <> show (length str)
   liftEff (listenHttp (appSetup state) port \_ ->
-    log requestsLogger $ "Listening on " <> show port)
+    log' $ "Listening on " <> show port)
 
 setInterval :: forall e a. Int -> Aff e a -> Aff e Unit
 setInterval ms a = later' ms $ do
@@ -112,5 +108,5 @@ catchAndLog :: forall a e. Aff (fs :: FS, err :: EXCEPTION, now :: NOW | e) a ->
 catchAndLog ma =
   attempt ma >>= \x ->
     case x of
-        Left err -> liftEff (log allLoggers err) $> Nothing
+        Left err -> liftEff (log' err) $> Nothing
         Right a -> pure (Just a)
