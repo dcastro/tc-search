@@ -1,7 +1,8 @@
 "use strict";
 
-exports.initTooltip = function() {
-  $('#gen-link.tooltipped').tooltip({delay: 50, position: "bottom", tooltip: "Generate a bookmarkable/shareable link"});
+exports.initTooltips = function() {
+  $('#gen-link.tooltipped' ).tooltip({delay: 50, position: "bottom", tooltip: "Generate a bookmarkable/shareable URL"});
+  $('#copy-link.tooltipped').tooltip({delay: 50, position: "bottom", tooltip: "Copy URL"});
 }
 
 exports.initModals = function() {

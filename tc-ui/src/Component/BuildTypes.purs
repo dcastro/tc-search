@@ -172,7 +172,7 @@ renderModal href =
         , HH.div
             [ HP.class_ $ className "col s1 right-align" ]
             [ HH.a
-                [ HP.class_ $ className "btn-floating waves-effect waves-light teal"
+                [ HP.class_ $ className "btn-floating waves-effect waves-light teal tooltipped"
                 , HP.id_ "copy-link"
                 , HE.onClick $ HE.input_ CopyLink
                 ]
@@ -189,7 +189,7 @@ eval (Initialize next) = do
 
   result      <- fromAff getBuildTypes
   _           <- modify _ { result = Just result }
-  _           <- fromEff (initTooltip *> initModals)
+  _           <- fromEff (initTooltips *> initModals)
   pure next'
 eval (UpdateText s next)  = modify _ { searchText = s } $> next
 eval (GenLink next)       = do
@@ -204,7 +204,7 @@ eval (CopyLink next) = do
   _       <- fromEff $ showToast $ if success then "Copied URL" else "Unable to copy URL"
   pure next
 
-foreign import initTooltip  :: forall eff. Eff (dom :: DOM | eff) Unit
+foreign import initTooltips :: forall eff. Eff (dom :: DOM | eff) Unit
 foreign import initModals   :: forall eff. Eff (dom :: DOM | eff) Unit
 
 foreign import clipboard    :: forall eff. String -> Eff (dom :: DOM | eff) Boolean

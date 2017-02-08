@@ -1,5 +1,8 @@
-#copy-text-area {
+.modal .col:first-child {
   overflow-wrap: break-word;
+  background-color: #eee;
+  border-radius: 2px;
+  padding: 9px 8px 9px 12px;
 }
 
 .modal-content.row {
