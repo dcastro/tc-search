@@ -1,20 +1,20 @@
 module Main where
 
 
-import Loggers (consoleLogger, fileLogger)
 import Network.HTTP.Affjax as AX
 import Control.Logger (log)
-import Control.Monad.Aff (Aff, later', runAff)
+import Control.Monad.Aff (Aff, attempt, later', runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION, Error, message)
 import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Ref (REF, Ref, newRef, readRef, writeRef)
+import Data.Either (Either(..))
 import Data.Int (fromString)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.MediaType.Common (applicationJSON)
-import Data.String (length)
+import Loggers (consoleLogger, fileLogger)
 import Network.HTTP.Affjax (AJAX)
 import Network.HTTP.RequestHeader (RequestHeader(..))
 import Node.Encoding (Encoding(..))
@@ -64,7 +64,7 @@ parseInt str = fromMaybe 0 $ fromString str
 
 requestsLogger    = fileLogger "requests.log" <> consoleLogger
 updateCacheLogger = fileLogger "updates.log"  <> consoleLogger
-allLoggers        = fileLogger "updates.log" <> fileLogger "requests.log" <> consoleLogger
+allLoggers        = fileLogger "updates.log"  <> fileLogger "requests.log" <> consoleLogger
 
 logger :: forall e. Handler (console :: CONSOLE, ref :: REF, fs :: FS, err :: EXCEPTION, now :: NOW | e)
 logger = do
@@ -95,7 +95,7 @@ main :: forall e. Eff (ref :: REF, express :: EXPRESS,
 main = do
   port <- liftEff $ (parseInt <<< fromMaybe "8080") <$> lookupEnv "PORT"
   state <- initState
-  runAff (log allLoggers) (log allLoggers) $ setInterval 2000 $ do
+  runAff (log allLoggers) (log allLoggers) $ setInterval 2000 $ catchAndLog $ do
     log updateCacheLogger "Updating build types"
     str <- getBuildTypes
     liftEff $ writeRef state str
@@ -107,3 +107,10 @@ setInterval :: forall e a. Int -> Aff e a -> Aff e Unit
 setInterval ms a = later' ms $ do
   a
   setInterval ms a
+
+catchAndLog :: forall a e. Aff (fs :: FS, err :: EXCEPTION, now :: NOW | e) a -> Aff (fs :: FS, err :: EXCEPTION, now :: NOW | e) (Maybe a)
+catchAndLog ma =
+  attempt ma >>= \x ->
+    case x of
+        Left err -> liftEff (log allLoggers err) $> Nothing
+        Right a -> pure (Just a)
