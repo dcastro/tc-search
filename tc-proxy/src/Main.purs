@@ -1,6 +1,5 @@
 module Main where
 
-
 import Network.HTTP.Affjax as AX
 import Control.Alt ((<|>))
 import Control.Logger (log)
@@ -13,7 +12,7 @@ import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Ref (REF, Ref, newRef, readRef, writeRef)
 import Data.Either (Either(..))
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, fromMaybe')
 import Data.MediaType.Common (applicationJSON)
 import Loggers (consoleLogger, fileLogger)
 import Network.HTTP.Affjax (AJAX)
@@ -98,14 +97,13 @@ main = do
     liftEff $ writeRef state str
 
   let app = appSetup state
+  let callback port = \_ -> log' $ "Listening on " <> port
   envPort <- lookupEnv "PORT"
-  let listen =
-            (envPort >>= fromString <#> listenHttp app)
-            <|> (envPort <#> listenPipe app)
-            # fromMaybe (listenHttp app 8080)
 
-  liftEff (listen \_ ->
-    log' $ "Listening")
+  liftEff $
+    (envPort >>= fromString <#>   \p -> listenHttp app p (callback $ show p))
+    <|> (envPort <#>              \p -> listenPipe app p (callback p))
+    # fromMaybe'                  \_ -> listenHttp app 8080 (callback "8080")
 
 setInterval :: forall e a. Int -> Aff e a -> Aff e Unit
 setInterval ms a = later' ms $ do
