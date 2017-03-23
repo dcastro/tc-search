@@ -2,6 +2,7 @@ module Main where
 
 
 import Network.HTTP.Affjax as AX
+import Control.Alt ((<|>))
 import Control.Logger (log)
 import Control.Monad.Aff (Aff, attempt, later', runAff)
 import Control.Monad.Eff (Eff)
@@ -18,7 +19,7 @@ import Loggers (consoleLogger, fileLogger)
 import Network.HTTP.Affjax (AJAX)
 import Network.HTTP.RequestHeader (RequestHeader(..))
 import Node.Encoding (Encoding(..))
-import Node.Express.App (App, listenHttp, useOnError, get, use, setProp)
+import Node.Express.App (App, listenHttp, listenPipe, useOnError, get, use, setProp)
 import Node.Express.Handler (Handler, next)
 import Node.Express.Request (getOriginalUrl, getRemoteIp)
 import Node.Express.Response (send, sendJson, setResponseHeader, setStatus)
@@ -76,14 +77,14 @@ errorHandler err = do
   setStatus 400
   sendJson {error: message err}
 
-appSetup :: forall e. AppState -> App (ref :: REF, console :: CONSOLE , ajax :: AJAX, err :: EXCEPTION, fs :: FS, now :: NOW | e)
+appSetup :: forall e. AppState -> App (ref :: REF, console :: CONSOLE, ajax :: AJAX, err :: EXCEPTION, fs :: FS, now :: NOW | e)
 appSetup state = do
   log' "Setting up"
   setProp "json spaces" 4.0
-  use               loggerHandler
-  get "/buildTypes" (getBuildTypesHandler state)
-  get "/sample"     sample
-  useOnError        errorHandler
+  use                       loggerHandler
+  get "/tcproxy/buildTypes" (getBuildTypesHandler state)
+  get "/tcproxy/sample"     sample
+  useOnError                errorHandler
 
 main :: forall e. Eff (ref :: REF, express :: EXPRESS,
                        console :: CONSOLE, process :: PROCESS,
@@ -91,20 +92,27 @@ main :: forall e. Eff (ref :: REF, express :: EXPRESS,
                        fs :: FS, now :: NOW | e)
                       Server
 main = do
-  port <- liftEff $ (parseInt <<< fromMaybe "8080") <$> lookupEnv "PORT"
   state <- initState
   runAff log' log' $ setInterval 2000 $ catchAndLog $ do
     str <- getBuildTypes
     liftEff $ writeRef state str
-  liftEff (listenHttp (appSetup state) port \_ ->
-    log' $ "Listening on " <> show port)
+
+  let app = appSetup state
+  envPort <- lookupEnv "PORT"
+  let listen =
+            (envPort >>= fromString <#> listenHttp app)
+            <|> (envPort <#> listenPipe app)
+            # fromMaybe (listenHttp app 8080)
+
+  liftEff (listen \_ ->
+    log' $ "Listening")
 
 setInterval :: forall e a. Int -> Aff e a -> Aff e Unit
 setInterval ms a = later' ms $ do
   a
   setInterval ms a
 
-catchAndLog :: forall a e. Aff (fs :: FS, err :: EXCEPTION, now :: NOW | e) a -> Aff (fs :: FS, err :: EXCEPTION, now :: NOW | e) (Maybe a)
+catchAndLog :: forall a e. Aff (fs :: FS, err :: EXCEPTION, now :: NOW, console :: CONSOLE | e) a -> Aff (fs :: FS, err :: EXCEPTION, now :: NOW, console :: CONSOLE | e) (Maybe a)
 catchAndLog ma =
   attempt ma >>= \x ->
     case x of

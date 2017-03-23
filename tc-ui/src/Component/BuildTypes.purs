@@ -212,7 +212,7 @@ foreign import showToast    :: forall eff. String -> Eff (dom :: DOM | eff) Unit
 
 getBuildTypes :: forall e. Aff (ajax :: AJAX | e) (Either String (Array BuildType))
 getBuildTypes = do
-  response <- attempt $ AX.get "http://localhost:8080/buildTypes"
+  response <- attempt $ AX.get "http://localhost/tcproxy/buildTypes"
   let result =
         response
         # bimap show _.response

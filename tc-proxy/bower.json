@@ -9,15 +9,17 @@
   "dependencies": {
     "purescript-prelude": "^2.1.0",
     "purescript-console": "^2.0.0",
-    "purescript-express": "^0.4.2",
+    "purescript-express": "git://github.com/dcastro/purescript-express.git#listen-pipe",
     "purescript-node-process": "^3.0.0",
     "purescript-affjax": "^3.0.2",
     "purescript-logging": "^1.0.0",
     "purescript-now": "^2.0.0",
-    "purescript-formatters": "^0.1.0"
+    "purescript-formatters": "^0.1.0",
+    "purescript-control": "~2.0.0"
   },
   "devDependencies": {
-    "purescript-psci-support": "^2.0.0"
+    "purescript-psci-support": "^2.0.0",
+    "purescript-test-unit": "^10.0.1"
   },
   "resolutions": {
     "purescript-eff": "^2.0.0",
