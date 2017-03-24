@@ -4,6 +4,7 @@ import Network.HTTP.Affjax as AX
 import Control.Alt ((<|>))
 import Control.Logger (log)
 import Control.Monad.Aff (Aff, attempt, later', runAff)
+import Control.Monad.Aff.Class (liftAff, class MonadAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE)
@@ -29,28 +30,27 @@ import Node.HTTP (Server)
 import Node.Process (PROCESS, lookupEnv)
 import Prelude hiding (apply)
 
-type AppStateData = String
+type AppStateData = Maybe String
 type AppState     = Ref AppStateData
 
-initState :: forall e. Eff ( "ref" :: REF | e) (Ref String)
-initState = newRef "{ \"buildType\" : [] }"
-
-getBuildTypes :: forall e. Aff ( "ajax" :: AJAX | e) String
+getBuildTypes :: forall e m. (MonadAff ("ajax" :: AJAX | e) m) => m String
 getBuildTypes =
   let req = AX.defaultRequest
               {
                 headers = [Accept applicationJSON]
-              -- , url = "http://localhost:8080/sample"
+              -- , url = "http://localhost/tcproxy/sample"
               , url = "http://scifbuild01:81/guestAuth/app/rest/buildTypes"
               }
-  in  AX.affjax req <#> _.response
+  in  liftAff $ AX.affjax req <#> _.response
 
 -- Endpoints
 getBuildTypesHandler :: forall e. AppState -> Handler (ajax :: AJAX, ref :: REF | e)
 getBuildTypesHandler state = do
   setResponseHeader "Content-Type" applicationJSON
   setResponseHeader "Access-Control-Allow-Origin" "*"
-  (liftEff $ readRef state) >>= send
+  s  <- liftEff (readRef state)
+  s' <- fromMaybe getBuildTypes (pure <$> s)
+  send (s' :: String)
 
 sample :: forall e. Handler (fs :: FS, err :: EXCEPTION | e)
 sample = do
@@ -91,10 +91,10 @@ main :: forall e. Eff (ref :: REF, express :: EXPRESS,
                        fs :: FS, now :: NOW | e)
                       Server
 main = do
-  state <- initState
+  state <- newRef Nothing
   runAff log' log' $ setInterval 2000 $ catchAndLog $ do
     str <- getBuildTypes
-    liftEff $ writeRef state str
+    liftEff $ writeRef state (Just str)
 
   let app = appSetup state
   let callback port = \_ -> log' $ "Listening on " <> port

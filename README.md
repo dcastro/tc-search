@@ -21,6 +21,7 @@ $ pulp run
 
 To host tc-proxy in IIS:
 
+* `npm i && bower i && pulp build`
 * Install [iisnode][0]
 * Install [URL rewrite module for IIS][1]
 * Create an IIS application pointing to the `tc-proxy\iis` folder
