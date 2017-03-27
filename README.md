@@ -19,13 +19,17 @@ $ bower i
 $ pulp run
 ```
 
-To host tc-proxy in IIS:
+## Hosting tc-proxy in IIS
 
 * `npm i && bower i && pulp build`
 * Install [iisnode][0]
 * Install [URL rewrite module for IIS][1]
 * Create an IIS application pointing to the `tc-proxy\iis` folder
+
+Notes:
 * Make sure you have a version of Node.JS that contains [this bug fix][3]; e.g. [this nightly][2].
+* Make sure the user `IIS AppPool\<ApplicationPoolName>` has the right permissions for the tc-proxy folder.
+* To change idle timeout, go to IIS > Application Pools > Select the app pool tc-proxy is running on > Advanced Settings > Idle Time-out.
 
 
  [0]: https://github.com/tjanczuk/iisnode#hosting-nodejs-applications-in-iis-on-windows

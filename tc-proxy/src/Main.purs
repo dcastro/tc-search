@@ -20,8 +20,8 @@ import Network.HTTP.Affjax (AJAX)
 import Network.HTTP.RequestHeader (RequestHeader(..))
 import Node.Encoding (Encoding(..))
 import Node.Express.App (App, listenHttp, listenPipe, useOnError, get, use, setProp)
-import Node.Express.Handler (Handler, next)
-import Node.Express.Request (getOriginalUrl, getRemoteIp)
+import Node.Express.Handler (Handler, HandlerM, next)
+import Node.Express.Request (getOriginalUrl, getRemoteIp, getRequestHeader)
 import Node.Express.Response (send, sendJson, setResponseHeader, setStatus)
 import Node.Express.Types (EXPRESS)
 import Node.FS (FS)
@@ -39,6 +39,7 @@ getBuildTypes =
               {
                 headers = [Accept applicationJSON]
               -- , url = "http://localhost/tcproxy/sample"
+              -- , url = "http://localhost:8080/tcproxy/sample"
               , url = "http://scifbuild01:81/guestAuth/app/rest/buildTypes"
               }
   in  liftAff $ AX.affjax req <#> _.response
@@ -66,10 +67,16 @@ log' = log logger
 
 loggerHandler :: forall e. Handler (console :: CONSOLE, ref :: REF, fs :: FS, err :: EXCEPTION, now :: NOW | e)
 loggerHandler = do
-  url   <- getOriginalUrl
-  host  <- getRemoteIp
-  log' $ url <> " " <> host
+  url <- getOriginalUrl
+  ip  <- getIp
+  log' $ url <> " " <> ip
   next
+
+getIp :: forall e. HandlerM (express :: EXPRESS | e) String
+getIp = getRemoteIp >>= \ip ->
+  if (("" <> ip) /= "undefined")
+    then pure ip
+    else fromMaybe "N/A" <$> getRequestHeader "x-forwarded-for"
 
 errorHandler :: forall e. Error -> Handler e
 errorHandler err = do
