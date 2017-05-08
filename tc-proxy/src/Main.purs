@@ -40,7 +40,8 @@ getBuildTypes =
                 headers = [Accept applicationJSON]
               -- , url = "http://localhost/tcproxy/sample"
               -- , url = "http://localhost:8080/tcproxy/sample"
-              , url = "http://scifbuild01:81/guestAuth/app/rest/buildTypes"
+              -- , url = "http://scifbuild01:81/guestAuth/app/rest/buildTypes"
+              , url = "http://build.navimedix.com/guestAuth/app/rest/buildTypes"
               }
   in  liftAff $ AX.affjax req <#> _.response
 
